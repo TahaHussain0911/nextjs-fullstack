@@ -2,11 +2,25 @@ import connectDB from "@/lib/dbConnect";
 import UserModel from "@/models/user.model";
 import bcrypt from "bcryptjs";
 import { sendVerificationEmail } from "@/helpers/sendVerification";
+import { signUpSchema } from "@/schemas/signup.schema";
+import { validateData } from "@/helpers/validateZod";
 
 export async function POST(request: Request) {
   await connectDB();
   try {
     const { username, email, password } = await request.json();
+    const errors = validateData(signUpSchema, { username, email, password });
+    if (errors) {
+      return Response.json(
+        {
+          success: false,
+          message: errors,
+        },
+        {
+          status: 400,
+        }
+      );
+    }
     const userExistsAndVerified = await UserModel.findOne({
       username,
       isVerified: true,
